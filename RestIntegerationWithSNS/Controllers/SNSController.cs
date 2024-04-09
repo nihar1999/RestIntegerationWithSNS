@@ -1,4 +1,4 @@
-﻿using Amazon;
+﻿﻿using Amazon;
 using Amazon.Runtime;
 using Amazon.SimpleNotificationService;
 using Amazon.SimpleNotificationService.Model;
@@ -19,30 +19,22 @@ namespace RestIntegerationWithSNS.Controllers
         {
             _logger = logger;
         }
+
         [HttpPost]
-        public async Task<string> Index([FromBody] SNSMessageModel snsMessage)
+        public async Task<string> Index([FromBody] string request)
         {
+            SNSMessageModel snsMessage = JsonConvert.DeserializeObject<SNSMessageModel>(request);
             var headers = Request.Headers;
-            foreach (var header in headers)
-            {
-                string headerName = header.Key;
-                string value = header.Value;
-                _logger.LogError($"Header: {headerName}, Value: {value}");
-            }
-
-
             var headerValue = Request.Headers["x-amz-sns-message-type"];
-            _logger.LogError($"Header value in request is : {headerValue}");
+            Console.WriteLine($"Header value in request is : {headerValue}");
 
             //Confirm the subscription
             if (headerValue == "SubscriptionConfirmation")
             {
 
                 string confirmationUrl = snsMessage.SubscribeURL;
-
                 // Log the confirmation URL
-                _logger.LogInformation($"Received confirmation message. Confirmation URL: {confirmationUrl}");
-                _logger.LogError($"Received confirmation message. Confirmation URL: {confirmationUrl}");
+                Console.WriteLine($"Received confirmation message. Confirmation URL: {confirmationUrl}");
                 //Send a request to the confirmation URL to confirm the subscription
                 using (HttpClient httpClient = new HttpClient())
                 {
@@ -51,16 +43,14 @@ namespace RestIntegerationWithSNS.Controllers
                     if (response.IsSuccessStatusCode)
                     {
                         // Subscription confirmed successfully
-                        Console.WriteLine("Subscription confirmed successfully");
-                        _logger.LogInformation("Subscription confirmed successfully");
-                        _logger.LogError($"Subscription confirmation DOne. HTTP Status Code: {response.StatusCode}");
+                        Console.WriteLine($"Subscription confirmation Done. HTTP Status Code: {response.StatusCode}");
                         return "Subscription confirmed";
                     }
                     else
                     {
                         // Handle the case where subscription confirmation failed
-                        Console.WriteLine("Error confirming subscription:");
-                        _logger.LogError($"Subscription confirmation failed. HTTP Status Code: {response.StatusCode}");
+                        
+                        Console.WriteLine($"Subscription confirmation failed. HTTP Status Code: {response.StatusCode}");
                         return "Subscription confirmation failed";
                     }
                 }
@@ -69,8 +59,6 @@ namespace RestIntegerationWithSNS.Controllers
             else
             {
                 Console.WriteLine("The recieved message : {0}", snsMessage.Message);
-                _logger.LogInformation(snsMessage.Message);
-                _logger.LogError(snsMessage.Message);
                 return snsMessage.Message;
             }
 
